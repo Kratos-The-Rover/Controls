@@ -10,7 +10,7 @@ Arm has been controlled using a game pad which has been used programmed using ar
 Drive code.</br>
 Arm code
 
-## Contrubutors: 
+## Contributors: 
 * [Rajath Shetty](https://github.com/rajathshetty20)
 * [Aadhar Sharma](https://github.com/aadhar218)
 * [Shambhavi Singh](https://github.com/28shambhavi)
