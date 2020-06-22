@@ -9,6 +9,7 @@ float v;
 float omega;
 float vel_wheels[6];
 int serial_pins[3] = {8,9,10};
+float left_wheel,right_wheel;
 signed int motorLspeed1,motorLspeed2,motorLspeed3,motorRspeed1,motorRspeed2,motorRspeed3;
 uint8_t commandbyte;
 SoftwareSerial myserial = SoftwareSerial(rxPin,txPin);
@@ -34,25 +35,28 @@ void setup() {
        MDDS2Serial.begin(baudrate);
        MDDS3Serial.begin(baudrate);
         delay(1000);
-       MDDS1Serial.write(0);
-       MDDS2Serial.write(0);
-       MDDS3Serial.write(0);
+       
    }
  
 void loop()
 {   
   //hardware serial for getting velocity from jetson to arduinomega
-  for (int i =0;i<6;i++)
-  {
     if(myserial.available()>0)
     {
-    vel_wheels[i] = myserial.read();
-    vel_wheels[i]=mymap(vel_wheels[i],-(0.5+vmax),(0.5+vmax),0,255);
+      left_wheel = myserial.read();
+      right_wheel = myserial.read();
     }
+  for (int i =0;i<3;i++)
+  {   vel_wheels[i] = left_wheel;
   }
+   for (int i =5;i>=3;i--)
+  {   vel_wheels[i] = right_wheel;
+  
+  }
+  
    //for cytron 1 
    motorLspeed1 = vel_wheels[0];
-   motorRspeed1 = vel_wheels[1];
+   motorRspeed1 = vel_wheels[3];
    
    if(motorLspeed1>=0)
       commandbyte = 0;
@@ -62,9 +66,9 @@ void loop()
    commandbyte = commandbyte | motorLspeed1;
    MDDS1Serial.write(commandbyte);
    
-   if(motorRspeed1>=0);
+   if(motorRspeed1>=0)
       commandbyte = 0xC0;
-   else if(motoRspeed1<0)
+   else if(motorRspeed1<0)
         commandbyte = 0x80;
         
    commandbyte = commandbyte | motorRspeed1;
@@ -73,8 +77,8 @@ void loop()
   Serial.println(commandbyte);
   
    //for cytron 2
-   motorLspeed2 = vel_wheels[2];
-   motorRspeed2 = vel_wheels[3];
+   motorLspeed2 = vel_wheels[1];
+   motorRspeed2 = vel_wheels[4];
    
   if(motorLspeed2>=0)
       commandbyte = 0;
@@ -84,18 +88,18 @@ void loop()
    commandbyte = commandbyte | motorLspeed2;
    MDDS2Serial.write(commandbyte);
 
-   if(motorRspeed2>=0);
+   if(motorRspeed2>=0)
       commandbyte = 0xC0;
-   else if(motoRspeed2<0)
+   else if(motorRspeed2<0)
         commandbyte = 0x80;
         
    commandbyte = commandbyte | motorRspeed2;
-   MDDS2Serial.write(commanbyte);
+   MDDS2Serial.write(commandbyte);
 
   Serial.println(commandbyte);
    //cytron 3
    
-   motorLspeed3 = vel_wheels[4];
+   motorLspeed3 = vel_wheels[2];
    motorRspeed3 = vel_wheels[5];
    
    if(motorLspeed3>=0)
@@ -106,9 +110,9 @@ void loop()
    commandbyte = commandbyte | motorLspeed1;
    MDDS3Serial.write(commandbyte);
 
-   if(motorRspeed3>=0);
+   if(motorRspeed3>=0)
       commandbyte = 0xC0;
-   else if(motoRspeed3<0)
+  else if(motorRspeed3<0)
         commandbyte = 0x80;
         
    commandbyte = commandbyte | motorRspeed3;
