@@ -33,7 +33,17 @@ void setup()
 
 void callback(const controls::PWM &pwm_obj)
 {
-  if(pwm_obj.dir==1)
+
+  if(pwm_obj.dir==0) //back
+  {
+    analogWrite(RW_PWM[0],pwm_obj.lf);
+    analogWrite(RW_PWM[1],pwm_obj.lm);
+    analogWrite(RW_PWM[2],pwm_obj.lb);
+    analogWrite(RW_PWM[3],pwm_obj.rf);
+    analogWrite(RW_PWM[4],pwm_obj.rm);
+    analogWrite(RW_PWM[5],pwm_obj.rb);
+  }
+  if(pwm_obj.dir==1) //front
   {
     analogWrite(FW_PWM[0],pwm_obj.lf);
     analogWrite(FW_PWM[1],pwm_obj.lm);
@@ -41,13 +51,21 @@ void callback(const controls::PWM &pwm_obj)
     analogWrite(FW_PWM[3],pwm_obj.rf);
     analogWrite(FW_PWM[4],pwm_obj.rm);
     analogWrite(FW_PWM[5],pwm_obj.rb);
-   
   }
-   if(pwm_obj.dir==0)
+  if(pwm_obj.dir==2) //left
   {
     analogWrite(RW_PWM[0],pwm_obj.lf);
     analogWrite(RW_PWM[1],pwm_obj.lm);
     analogWrite(RW_PWM[2],pwm_obj.lb);
+    analogWrite(FW_PWM[3],pwm_obj.rf);
+    analogWrite(FW_PWM[4],pwm_obj.rm);
+    analogWrite(FW_PWM[5],pwm_obj.rb);
+  }
+  if(pwm_obj.dir==3) //right
+  {
+    analogWrite(FW_PWM[0],pwm_obj.lf);
+    analogWrite(FW_PWM[1],pwm_obj.lm);
+    analogWrite(FW_PWM[2],pwm_obj.lb);
     analogWrite(RW_PWM[3],pwm_obj.rf);
     analogWrite(RW_PWM[4],pwm_obj.rm);
     analogWrite(RW_PWM[5],pwm_obj.rb);
