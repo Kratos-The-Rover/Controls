@@ -15,7 +15,7 @@ class GoalController:
         self.min_angular_speed = 0
         self.max_linear_acceleration = 1E9
         self.max_angular_acceleration = 1E9
-        self.linear_tolerance = 0.025 # 2.5cm
+        self.linear_tolerance = 0.1 # 2.5cm
         self.angular_tolerance = 3/180*pi # 3 degrees
         self.forward_movement_only = False
 

@@ -20,8 +20,8 @@ kP = rospy.get_param('~kP', 3.0)
 kA = rospy.get_param('~kA', 8.0)
 kB = rospy.get_param('~kB', -1.5)
 controller.set_constants(kP, kA, kB)
-controller.set_linear_tolerance(rospy.get_param('~linear_tolerance', 0.05))
-controller.set_angular_tolerance(rospy.get_param('~angular_tolerance', 3/180*pi))
+controller.set_linear_tolerance(rospy.get_param('~linear_tolerance', 0.1))
+controller.set_angular_tolerance(rospy.get_param('~angular_tolerance', 10/180*pi))
 controller.set_max_linear_speed(rospy.get_param('~max_linear_speed', 0.2))
 controller.set_min_linear_speed(rospy.get_param('~min_linear_speed', 0))
 controller.set_max_angular_speed(rospy.get_param('~max_angular_speed', 1.0))
@@ -68,13 +68,14 @@ twist=Twist()
 while not rospy.is_shutdown () and goal is not None:
     
     if controller.at_goal(x,y,theta,goal):
-        twist.linear.x=0
-        twist.angular.z=0
+        goal = None
+        twist.linear.x=desired.xVel
+        twist.angular.z=desired.thetaVel
         pub.publish(twist)
     else:
         desired=controller.get_velocity(x,y,theta,goal,dT)
     d=controller.get_goal_distance(x,y,theta,goal)
-    print(d)
+    rospy.loginfo(d)
     dist_pub.publish(d)
 
     twist.linear.x=desired.xVel
