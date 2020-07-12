@@ -1,0 +1,10 @@
+# goal definition
+float64 x
+float64 y
+float64 theta
+---
+# result definition
+bool success
+---
+# feedback
+bool processing
