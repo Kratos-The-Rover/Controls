@@ -1,0 +1,29 @@
+This file lists the functions (and their actions) used in ScienceControl.ino
+
+CollectSoilSetup()
+	this declares i/o pins and set other params used in soil collection task
+
+MoveUp()	
+	will pull-up soil collection assembly by controlling parallel steppers
+
+MoveDown()	
+	will pull-down soil collection assembly by controlling parallel steppers
+
+RotateRatchet()
+	will rotate ratchet wheel during soil collection
+
+RotateServo()
+	will rotate servo to empty the collected soil
+
+WaterPump()
+	will pump water to create soil solution
+
+SyringeFill()
+	Fills the syringe with the suspension & is transfers it into the 3 testubes
+
+SyringeEmpty()
+	empties the syringe 
+	
+Rotate120()
+	rotates the science assembly by 120 deg 
+
