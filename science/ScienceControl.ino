@@ -245,7 +245,7 @@ void SyringeEmpty(){
 
 }
 void Rotate120(){//will rotate 120 deg ckwise relatively
-  long desired_rot = 100.0;//to yield 120 deg rotation
+  long desired_rot = 100;//to yield 120 deg rotation
   float rot_speed = 100.0;
   RotStepper.setCurrentPosition(0);
   RotStepper.moveTo(desired_rot);
