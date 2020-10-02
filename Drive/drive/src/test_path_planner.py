@@ -1,0 +1,1 @@
+#implement a hard coded node to pass points to controller for testing
