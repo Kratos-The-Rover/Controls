@@ -1,21 +1,21 @@
 
-#include <SoftwareSerial.h>
 #define baudrate 115200
 #define vmax 0.22
 #define wmax 2.84
+#define JETSerial Serial
+#define MDDS1Serial Serial1
+#define MDDS2Serial Serial2
+#define MDDS3Serial Serial3
+
+
 int rxPin =0;
 int txPin = 1;
 float v;
 float omega;
 float vel_wheels[6];
-int serial_pins[3] = {8,9,10};
 float left_wheel,right_wheel;
 signed int motorLspeed1,motorLspeed2,motorLspeed3,motorRspeed1,motorRspeed2,motorRspeed3;
 uint8_t commandbyte;
-SoftwareSerial myserial = SoftwareSerial(rxPin,txPin);
-SoftwareSerial MDDS1Serial = SoftwareSerial(rxPin,serial_pins[0]);
-SoftwareSerial MDDS2Serial = SoftwareSerial(rxPin,serial_pins[1]);
-SoftwareSerial MDDS3Serial = SoftwareSerial(rxPin,serial_pins[2]);
 
 float mymap(float c,float a,float b,float d,float e)
 {
@@ -24,13 +24,9 @@ float mymap(float c,float a,float b,float d,float e)
  
 void setup() {
     
-    myserial.begin(baudrate);
+    JETSerial.begin(baudrate);
     delay(1000);
-      for ( int i=0; i<3 ;i++)
-    {
-        pinMode(serial_pins[i],OUTPUT);
-    }
-       
+  
        MDDS1Serial.begin(baudrate);
        MDDS2Serial.begin(baudrate);
        MDDS3Serial.begin(baudrate);
@@ -41,7 +37,7 @@ void setup() {
 void loop()
 {   
   //hardware serial for getting velocity from jetson to arduinomega
-    if(myserial.available()>0)
+    if(JETSerial.available()>0)
     {
       left_wheel = myserial.read();
       right_wheel = myserial.read();
@@ -74,7 +70,7 @@ void loop()
    commandbyte = commandbyte | motorRspeed1;
    MDDS1Serial.write(commandbyte);
    
-  Serial.println(commandbyte);
+  JETSerial.println(commandbyte);// printed on my Serial
   
    //for cytron 2
    motorLspeed2 = vel_wheels[1];
@@ -96,7 +92,7 @@ void loop()
    commandbyte = commandbyte | motorRspeed2;
    MDDS2Serial.write(commandbyte);
 
-  Serial.println(commandbyte);
+  JETSerial.println(commandbyte);// printed on my Serial
    //cytron 3
    
    motorLspeed3 = vel_wheels[2];
@@ -118,7 +114,7 @@ void loop()
    commandbyte = commandbyte | motorRspeed3;
    MDDS3Serial.write(commandbyte);
 
-  Serial.println(commandbyte);
+  JETSerial.println(commandbyte);// printed on my Serial
    
    
    delay(200);
