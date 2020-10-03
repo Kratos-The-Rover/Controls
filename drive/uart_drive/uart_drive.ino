@@ -70,7 +70,7 @@ void loop()
    commandbyte = commandbyte | motorRspeed1;
    MDDS1Serial.write(commandbyte);
    
-  JETSerial.println(commandbyte);// printed on my Serial
+  JETSerial.println(commandbyte);
   
    //for cytron 2
    motorLspeed2 = vel_wheels[1];
@@ -92,7 +92,7 @@ void loop()
    commandbyte = commandbyte | motorRspeed2;
    MDDS2Serial.write(commandbyte);
 
-  JETSerial.println(commandbyte);// printed on my Serial
+  JETSerial.println(commandbyte);
    //cytron 3
    
    motorLspeed3 = vel_wheels[2];
@@ -114,7 +114,7 @@ void loop()
    commandbyte = commandbyte | motorRspeed3;
    MDDS3Serial.write(commandbyte);
 
-  JETSerial.println(commandbyte);// printed on my Serial
+  JETSerial.println(commandbyte);
    
    
    delay(200);
