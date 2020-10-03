@@ -1,28 +1,29 @@
 #!/usr/bin/env python
 import rospy
-from math import pi, asin, acos
-from tf.transformations import euler_from_quaternion,quaternion_from_euler
-from geometry_msgs.msg import Twist, PoseStamped, Point
+from geometry_msgs.msg import Twist, Point
+from tf.transformations import euler_from_quaternion
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Float32, Bool
-import actionlib
-from diff_drive import pid_controller
+from std_msgs.msg import Float32
+from pid_controller import PIDController
+from utils import *
+from math import pi
 
 
 def path_callback(msg):
-    global goal
-    goal=PoseStamped()
-    goal.pose.position.x=msg.x
-    goal.pose.position.y=msg.y
-    goal.pose.orientation = quaternion_from_euler(0,0,0) #change third coordinate in tuple to change theta
+    global goal,controller
+    goal=Pose()
+    goal.x=msg.x
+    goal.y=msg.y
+    goal.theta = 0 #default set to zero ##check later
+    controller = PIDController()
     goto()
 
 
-def newOdom(msg):
-    global x, y, theta
-
-    x = msg.pose.pose.position.x
-    y = msg.pose.pose.position.y
+def odom_callback(msg):
+    global current_pose
+    current_pose=Pose()
+    current_pose.x = msg.pose.pose.position.x
+    current_pose.y = msg.pose.pose.position.y
     orientation_q = msg.pose.pose.orientation
     orientation_list = [
         orientation_q.x,
@@ -31,39 +32,37 @@ def newOdom(msg):
         orientation_q.w,
     ]
     (roll, pitch, yaw) = euler_from_quaternion(orientation_list)
-    theta = yaw
+    current_pose.theta = yaw
+    sub_goal=rospy.Subscriber("/path",Point ,path_callback)
 
 def goto():
-    while not rospy.is_shutdown() and goal is not None:
-
-        if controller.at_goal(x, y, theta, goal):
+    global goal,current_pose,controller
+    desired_vel=Pose()
+    while goal is not None:
+        if at_goal(current_pose, goal,linear_tolerance,angular_tolerance):
             rospy.loginfo("Goal achieved")
             goal = None
-            desired.xVel=0
-            desired.thetaVel=0
+            desired_vel.x=0
+            desired_vel.theta=0
         else:
-            desired = controller.get_velocity(x, y, theta, goal, dT)
-            d = controller.get_goal_distance(x, y, theta, goal)
-            rospy.loginfo(d)
-            dist_pub.publish(d)
+            desired_vel = controller.get_velocity(current_pose, goal)
+            d = get_goal_distance(current_pose, goal)
+            # rospy.loginfo(desired_vel.theta)
+            # dist_pub.publish(desired_vel.theta)
 
-        twist.linear.x = desired.xVel
-        twist.angular.z = desired.thetaVel
+        twist.linear.x = desired_vel.x
+        twist.angular.z = desired_vel.theta
         pub.publish(twist)
         r.sleep()
 
 #initial values for various variables
-dT = 0.1
-x = 0
-y = 0
-theta = 0
+rospy.init_node("controller")
+linear_tolerance = rospy.get_param("~linear_tolerance", 0.1)  # 2.5cm
+angular_tolerance = rospy.get_param("~angular_tolerance", 10 / 180 * pi)  # 3 degrees
 twist = Twist()
 r = rospy.Rate(10)
-controller = pid_controller.PIDController()
-rospy.init_node("my_controller", anonymous=True)
 
-sub_goal=rospy.Subscriber("/path",Point ,path_callback)
-sub = rospy.Subscriber("/odom", Odometry, newOdom)
-pub = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
+sub = rospy.Subscriber("/odometry/filtered", Odometry, odom_callback) #odom for kratos/tb for husky odometry/filtered
+pub = rospy.Publisher("/cmd_vel", Twist, queue_size=5)
 dist_pub = rospy.Publisher("~distance_to_goal", Float32, queue_size=10)
-
+rospy.spin()

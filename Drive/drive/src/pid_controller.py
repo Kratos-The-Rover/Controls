@@ -1,114 +1,75 @@
 #!/usr/bin/env python
 import rospy
-from math import pi, sqrt, sin, cos, atan2
-from geometry_msgs.msg import PoseStamped
+from math import pi, sqrt, cos, atan2
+from utils import *
 
-# this is a custom PID implementation
+# this is a custom PID implementation(first rotate then translate)
 class PIDController:
     # goal controller uses the current odometry and the goal position and provides with the velocity
 
     def __init__(self):
-        self.kP = rospy.get_param("~kP", 3.0)
-        self.kA = rospy.get_param("~kA", 8.0)
-        self.kB = rospy.get_param("~kB", -1.5)
-        self.max_linear_speed = rospy.get_param("~max_linear_speed", 0.2)
-        self.min_linear_speed = rospy.get_param("~min_linear_speed", 0)
-        self.max_angular_speed = rospy.get_param("~max_angular_speed", 1.0)
-        self.min_angular_speed = rospy.get_param("~min_angular_speed", 0)
-        self.max_linear_acceleration = rospy.get_param("~max_linear_acceleration", 0.1)
-        self.max_angular_acceleration = rospy.get_param("~max_angular_acceleration", 0.3)
-        self.linear_tolerance = rospy.get_param("~linear_tolerance", 0.1)  # 2.5cm
-        self.angular_tolerance = rospy.get_param("~angular_tolerance", 10 / 180 * pi)  # 3 degrees
-        self.forward_movement_only = rospy.get_param("~forwardMovementOnly", True)
+        self.a_i=0
+        self.a_prev=0
+        self.e_i=0
+        self.e_prev=0
+        self.kP = rospy.get_param("kP", 3.0)
+        self.kI = rospy.get_param("kI", 0)
+        self.kD = rospy.get_param("kD", 0)
+        self.kP_r = rospy.get_param("kP_r", 3.0)
+        self.kI_r = rospy.get_param("kI_r", 0)
+        self.kD_r = rospy.get_param("kD_r", 0)
+        self.max_linear_speed = rospy.get_param("max_linear_speed", 0.2)
+        self.min_linear_speed = rospy.get_param("min_linear_speed", 0.001)
+        self.max_angular_speed = rospy.get_param("max_angular_speed", 1.0)
+        self.min_angular_speed = rospy.get_param("min_angular_speed", 0.001)
+        self.linear_tolerance = rospy.get_param("linear_tolerance", 0.1)  # 2.5cm
+        self.angular_tolerance =rospy.get_param("angular_tolerance", 0.053) # 3 degrees
+        self.forward_movement_only = rospy.get_param("forwardMovementOnly", False)
 
-    def get_goal_distance(self, x, y, theta, goal):
-        if goal is None:
-            return 0
-        diffX = x - goal.x
-        diffY = y - goal.y
-        return sqrt(diffX * diffX + diffY * diffY)
 
-    def at_goal(self, x, y, theta, goal):
-        if goal is None:
-            return True
-        d = self.get_goal_distance(x, y, theta, goal)
-        dTh = abs(self.normalize_pi(theta - goal.theta))
-        return d < self.linear_tolerance and dTh < self.angular_tolerance
-
-    def get_velocity(self, x, y, theta, goal, dT):
-        desired = PoseStamped()
-
-        goal_heading = atan2(goal.y - y, goal.x - x)
-        a = -theta + goal_heading
-
-        # In Automomous Mobile Robots, they assume theta_G=0. So for
-        # the error in heading, we have to adjust theta based on the
-        # (possibly non-zero) goal theta.
-        theta_1 = self.normalize_pi(theta - goal.theta)
-        b = -theta_1 - a
-
-        d = self.get_goal_distance(x, y, theta, goal)
+    def get_velocity(self,current_pose, goal):
+        desired = Pose()
+        goal_heading = atan2(goal.y - current_pose.y, goal.x -current_pose.x)
         if self.forward_movement_only:
             direction = 1
-            a = self.normalize_pi(a)
-            b = self.normalize_pi(b)
+            goal_heading = normalize_pi(goal_heading)
         else:
-            direction = self.sign(cos(a))
-            a = self.normalize_half_pi(a)
-            b = self.normalize_half_pi(b)
+            direction = sign(cos(goal_heading))
+            goal_heading = normalize_half_pi(goal_heading)
 
-        if abs(d) < self.linear_tolerance:
-            desired.xVel = 0
-            desired.thetaVel = self.kB * theta
+        self.a=goal_heading-current_pose.theta
+        self.e=get_goal_distance(current_pose,goal)
+
+        if abs(self.a) > self.angular_tolerance:
+            print self.max_linear_speed
+            self.a_i+=self.a
+            self.a_d=self.a-self.a_prev
+            desired.x = 0
+            desired.theta = self.kP_r*self.a +self.kI_r*self.a_i +self.kD_r*self.a_d
+        elif abs(self.e) > self.linear_tolerance:
+            self.e_i+=self.e
+            self.e_d=self.e-self.e_prev
+            desired.x = (self.kP*self.e +self.kI*self.e_i +self.kD*self.e_d)*direction
+            desired.theta =0
         else:
-            desired.xVel = self.kP * d * direction
-            desired.thetaVel = self.kA * a + self.kB * b
+            desired.x = 0
+            desired.theta =0
 
+        self.a_prev=self.a
+        self.e_prev=self.e
         # Adjust velocities if X velocity is too high.
-        if abs(desired.xVel) > self.max_linear_speed:
-            ratio = self.max_linear_speed / abs(desired.xVel)
-            desired.xVel *= ratio
-            desired.thetaVel *= ratio
+        # Adjust velocities if too low, so robot does not stall.
+        if abs(desired.x) > self.max_linear_speed:
+            desired.x = self.max_linear_speed*direction
+        elif abs(desired.x) > 0 and abs(desired.x) < self.min_linear_speed:
+            desired.x = self.min_linear_speed*direction
 
         # Adjust velocities if turning velocity too high.
-        if abs(desired.thetaVel) > self.max_angular_speed:
-            ratio = self.max_angular_speed / abs(desired.thetaVel)
-            desired.xVel *= ratio
-            desired.thetaVel *= ratio
-
-        # TBD: Adjust velocities if linear or angular acceleration
-        # too high.
-
-        # Adjust velocities if too low, so robot does not stall.
-        if abs(desired.xVel) > 0 and abs(desired.xVel) < self.min_linear_speed:
-            ratio = self.min_linear_speed / abs(desired.xVel)
-            desired.xVel *= ratio
-            desired.thetaVel *= ratio
-        elif desired.xVel == 0 and abs(desired.thetaVel) < self.min_angular_speed:
-            ratio = self.min_angular_speed / abs(desired.thetaVel)
-            desired.xVel *= ratio
-            desired.thetaVel *= ratio
+        if abs(desired.theta)>0 and abs(desired.theta) < self.min_angular_speed:
+            desired.theta = self.min_angular_speed
+        elif abs(desired.theta) > self.max_angular_speed:
+            desired.theta = self.max_angular_speed    
 
         return desired
 
-    def normalize_half_pi(self, alpha):
-        alpha = self.normalize_pi(alpha)
-        if alpha > pi / 2:
-            return alpha - pi
-        elif alpha < -pi / 2:
-            return alpha + pi
-        else:
-            return alpha
 
-    def normalize_pi(self, alpha):
-        while alpha >= pi:
-            alpha -= 2 * pi
-        while alpha < -pi:
-            alpha += 2 * pi
-        return alpha
-
-    def sign(self, x):
-        if x >= 0:
-            return 1
-        else:
-            return -1
