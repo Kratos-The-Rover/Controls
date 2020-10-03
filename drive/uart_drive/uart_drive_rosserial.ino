@@ -6,7 +6,7 @@
 #define wmax 2.84
 #define MDDS1Serial Serial1
 #define MDDS2Serial Serial2
-#define MDDS2Serial Serial3
+#define MDDS3Serial Serial3
 
 ros::NodeHandle nh; //Node decleration
 
