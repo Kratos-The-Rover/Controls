@@ -1,13 +1,19 @@
-#Set Parameters
+---
+#PID Gain values for translation
 kP : 3
-kA : 8
-kB : -1.5
-max_linear_speed : 1E9
-min_linear_speed : 0
-max_angular_speed : 1E9
-min_angular_speed : 0
-max_linear_acceleration : 1E9
-max_angular_acceleration : 1E9
-linear_tolerance : 0.1 # 2.5cm
-angular_tolerance : 3/180*pi # 3 degrees
-forward_movement_only : False
+kI : 0
+kD : 0
+#PID Gain values for rotation
+kP_r : 3
+kI_r : 0
+kD_r : 0
+#Max/Min values of speeds
+max_linear_speed : 0.1
+min_linear_speed : 0.0001
+max_angular_speed : 0.1
+min_angular_speed : 0.0001
+#Permissible errors for linear and angular motion 
+linear_tolerance : 0.1 
+angular_tolerance : 0.053   #3/180*pi
+#Direction of motion
+forward_movement_only : True

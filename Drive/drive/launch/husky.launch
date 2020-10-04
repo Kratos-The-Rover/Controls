@@ -1,0 +1,15 @@
+<!-- Launch file to launch all the nodes (controller, pid_controller,test_path_planner), 
+to load parameters to the ROS parameter server (from params.yaml),initiate rosserial communication
+and to launch husky in a empty gazebo world -->
+
+<launch>
+ <rosparam command="load" file="$(find drive)/config/params.yaml" />
+ <node name="pid_" type="pid_controller.py" pkg="drive" output="screen"/> 
+ <node name="controller_" type="controller.py" pkg="drive" output="screen"/>
+ <node name="planner_" type="test_path_planner.py" pkg="drive" output="screen"/>
+   <!-- <node name="serial_node"        pkg="rosserial_python"      type="serial_node.py">
+    <param name="port"              type="string"               value="/dev/ttyACM0"/>
+    <param name="baud"              type="int"                  value="115200"/>
+    </node> -->
+ <include file="$(find husky_gazebo)/launch/husky_empty_world.launch" />
+</launch>
