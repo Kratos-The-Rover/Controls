@@ -51,98 +51,94 @@ const int sy_step_pin = 7;//syringe step pin
 const int sy_dir_pin = 31;//syringe dir pin
 AccelStepper SyringeStepper (AccelStepper::DRIVER, sy_step_pin, sy_dir_pin);
 
-//joy stepper driver
-AccelStepper JoyStepper(AccelStepper::DRIVER, joy_step_pin, joy_dir_pin);
-JoyStepper.setCurrentPosition(0);
+//pipe stepper driver
+AccelStepper PipeStepper(AccelStepper::DRIVER, joy_step_pin, joy_dir_pin);
+PipeStepper.setCurrentPosition(0);
 //ROtate 120 deg stepper driver a4988
 const int rot_dir_pin = 32;
 const int rot_step_pin = 8;
 AccelStepper RotStepper(AccelStepper::DRIVER, joy_step_pin, joy_dir_pin);
-//int vel;
-void JoyCB(const sensor_msgs::Joy& msg)
-{ 
-  float x = msg.axes[0];
-  if(x>0.8 && JoyStepper.currentPosition()<max_steps){
-    analogWrite(joy_dir_pin,LOW);
-    analogWrite(joy_step_pin,255);
-  }
-  else if(x<-0.8 && JoyStepper.currentPosition() > -1*max_steps){
-    digitalWrite(joy_dir_pin,HIGH);
-    analogWrite(joy_step_pin,255);
-  }
-  else{
-    analogWrite(joy_step_pin,0);
-  }
-  
 
-  
-}
 
-String key;
+String com;
 
-void KeyCB(const std_msgs::String &msg){
-  key = msg.data;
+void ScienceCB(const std_msgs::String &command){
+  com = command.data;
   
-  if(key == "w"){
+  if(com == "w"){
       MoveUp();
       status.data = "Moving COllection assembly  up";
       pub_status.publish(&status);
   }
-  else if (key == "s"){
+  else if (com == "s"){
       MoveDown();
       status.data = "Moving COllection assembly  down";
       pub_status.publish(&status);
   }
-  else if (key == "r"){
+  else if (com == "r"){
       RotateRatchet();
       status.data = "Rotating Ratchet";
       pub_status.publish(&status);
   }
-    else if (key == "e"){
+    else if (com == "e"){
       SyringeEmpty();
       status.data = "emptying syrige";
       pub_status.publish(&status);
   }
-    else if (key == "f"){
+    else if (com == "f"){
       SyringeFill();
       status.data = "filling syringe";
       pub_status.publish(&status);
   }    
-    else if (key == "x"){
+    else if (com == "x"){
       Rotate120();
       status.data = "Rotating cylinder by 120 deg";
       pub_status.publish(&status);
   }    
-    else if (key == "z"){
+    else if (com == "z"){
       WaterPump();
       status.data = "Pumping water";
       pub_status.publish(&status);
+    else if (com == "q"){
+      RotateServo();
+      status.data = "Rotating Servo";
+      pub_status.publish(&status);  
    }   
+    else if (com == "a" && JoyStepper.currentPosition()<max_steps){
+      PipeUp(); // will move our water pipe up 
+      status.data = "Moving Water Pipe Up";
+      pub_status.publish(&status);
+    else if (com == "d" && JoyStepper.currentPosition()>-1*max_steps){
+      PipeDown(); // will move our water pipe down 
+      status.data = "Moving Water Pipe Down";
+      pub_status.publish(&status);  
+
+    }
   }  
 
 // ros nodehandle
 ros::NodeHandle n;
-ros::Subscriber<sensor_msgs::Joy> JoyRead("joy", JoyCB);
-ros::Subscriber<std_msgs::String> KeyRead("keys", KeyCB);
+
+ros::Subscriber<std_msgs::String> ScienceCommand("science", ScienceCB);
 
 std_msgs::String status;
 //will publish current operaton status.
 ros::Publisher pub_status("func", &status);
 
 void setup() {
-  Serial.begin(9600);
+
   CollectSoilSetup();
   pinMode(waterpump_enable, OUTPUT);
   pinMode(waterpump_dir, OUTPUT);
   pinMode(joy_dir_pin, OUTPUT);
   pinMode(joy_step_pin, OUTPUT);
-  pinMode()
+
   n.initNode();
   n.advertise(pub_status);
 
 
-  n.subscribe(JoyRead);
-  n.subscribe(KeyRead);
+  n.subscribe(ScienceCommand);
+
   
 }
 
@@ -247,14 +243,31 @@ void SyringeEmpty(){
 void Rotate120(){//will rotate 120 deg ckwise relatively
   long desired_rot = 100;//to yield 120 deg rotation
   float rot_speed = 100.0;
-  RotStepper.setCurrentPosition(0);
-  RotStepper.moveTo(desired_rot);
   RotStepper.setSpeed(rot_speed);
-  RotStepper.runSpeedToPosition();
+  RotStepper.move(desired_rot);// moves stepper relatively ,negative steps mean opposite direction
+  
+
 
 }
-
+void PipeUp(){
+  digitalWrite(syringe_enable, LOW);
+  SyringeStepper.setSpeed(lowering_speed);
+  SyringeStepper.moveTo(desired_position);
+ 
+}
+      
+void PipeDown(){
+  digitalWrite(syringe_enable, LOW);
+  SyringeStepper.setSpeed(lowering_speed);
+  SyringeStepper.moveTo(-1*desired_position);
+ 
+}
+      
 void loop(){
   nh.spinOnce();
   delay(1);
+  RotStepper.run();
+  PipeStepper.run();
+
+
 }
