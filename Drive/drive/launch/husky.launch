@@ -6,7 +6,7 @@ and to launch husky in a empty gazebo world -->
  <rosparam command="load" file="$(find drive)/config/params.yaml" />
  <node name="pid_" type="pid_controller.py" pkg="drive" output="screen"/> 
  <node name="controller_" type="controller.py" pkg="drive" output="screen"/>
- <node name="planner_" type="test_path_planner.py" pkg="drive" output="screen"/>
+ <node name="planner_" type="test_path_planner.py" pkg="drive" output="screen" launch-prefix="gnome-terminal --command"/>
    <!-- <node name="serial_node"        pkg="rosserial_python"      type="serial_node.py">
     <param name="port"              type="string"               value="/dev/ttyACM0"/>
     <param name="baud"              type="int"                  value="115200"/>
