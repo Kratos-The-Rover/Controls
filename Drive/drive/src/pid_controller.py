@@ -29,26 +29,28 @@ class PIDController:
         self.linear_tolerance = rospy.get_param("linear_tolerance", 0.1)
         self.angular_tolerance = rospy.get_param("angular_tolerance", 0.053)  # 3/180*pi
         # Direction of motion
-        self.forward_movement_only = rospy.get_param("forwardMovementOnly", False)
+        self.forward_movement_only = rospy.get_param("forward_movement_only", False)
 
     # Funcion to return velocity according to the current position and goal
-    def get_velocity(self, current_pose, goal):
+    def get_velocity(self, current_pose, start, goal):
         desired = Pose()
         # Calculate goal_heading according to restrictions in direction of motion and goal
-        goal_heading = atan2(goal.y - current_pose.y, goal.x - current_pose.x)
+        goal_heading = atan2(goal.y - start.y, goal.x - start.x)
         if self.forward_movement_only:
             direction = 1
             goal_heading = normalize_pi(goal_heading)
         else:
-            direction = sign(cos(goal_heading))
+            direction = sign(cos(goal_heading-current_pose.theta))
             goal_heading = normalize_half_pi(goal_heading)
+            current_pose.theta = normalize_half_pi(current_pose.theta)
 
         # Calculate errors in positon(linear and angular)
-        self.a = goal_heading - current_pose.theta
+        self.a =normalize_pi(goal_heading - current_pose.theta)
         self.e = get_goal_distance(current_pose, goal)
 
         # Calculate velocities based on errors a(rotational) and e(translational)
         if abs(self.a) > self.angular_tolerance:
+            print(self.a*180/pi)
             self.a_i += self.a
             self.a_d = self.a - self.a_prev
             desired.x = 0
@@ -56,6 +58,7 @@ class PIDController:
                 self.kP_r * self.a + self.kI_r * self.a_i + self.kD_r * self.a_d
             )
         elif abs(self.e) > self.linear_tolerance:
+            print(self.e)
             self.e_i += self.e
             self.e_d = self.e - self.e_prev
             desired.x = (
@@ -76,9 +79,9 @@ class PIDController:
             desired.x = self.min_linear_speed * direction
 
         # Adjust velocities if turning velocity too high or too low.
-        if abs(desired.theta) > 0 and abs(desired.theta) < self.min_angular_speed:
-            desired.theta = self.min_angular_speed
-        elif abs(desired.theta) > self.max_angular_speed:
-            desired.theta = self.max_angular_speed
+        if abs(desired.theta) > self.max_angular_speed:
+            desired.theta = self.max_angular_speed*desired.theta/abs(desired.theta)
+        elif abs(desired.theta) > 0 and abs(desired.theta) < self.min_angular_speed:
+            desired.theta = self.min_angular_speed*desired.theta/abs(desired.theta)
 
         return desired

@@ -4,8 +4,6 @@ from math import sqrt, pi
 
 # Function to return distance of current point from the goal
 def get_goal_distance(current_pose, goal):
-    if goal is None:
-        return 0
     diffX = current_pose.x - goal.x
     diffY = current_pose.y - goal.y
     return sqrt(diffX ** 2 + diffY ** 2)
@@ -13,10 +11,11 @@ def get_goal_distance(current_pose, goal):
 
 # Function to return True if goal is reached, False otherwise
 def at_goal(current_pose, goal, linear_tolerance, angular_tolerance):
-    if goal is None:
-        return True
     d = get_goal_distance(current_pose, goal)
-    dTh = abs(normalize_pi(current_pose.theta - goal.theta))
+    if goal.theta is None:
+        dTh=0
+    else:
+        dTh = abs(normalize_pi(current_pose.theta - goal.theta))
     return d < linear_tolerance and dTh < angular_tolerance
 
 
@@ -53,7 +52,7 @@ class Pose:
     def __init__(self):
         self.x = 0
         self.y = 0
-        self.theta = 0
+        self.theta = None
 
     def __str__(self):
         return str({"x": self.x, "y": self.y, "theta": self.theta})
