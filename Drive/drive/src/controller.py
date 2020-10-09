@@ -70,8 +70,8 @@ def goto():
 
 # initial values for various variables
 rospy.init_node("controller")
-linear_tolerance = rospy.get_param("~linear_tolerance", 0.1)  # 2.5cm
-angular_tolerance = rospy.get_param("~angular_tolerance", 10 / 180 * pi)  # 3 degrees
+linear_tolerance = rospy.get_param("linear_tolerance", 0.1)  # 2.5cm
+angular_tolerance = rospy.get_param("angular_tolerance", 10 / 180 * pi)  # 3 degrees
 twist = Twist()
 r = rospy.Rate(10)
 
