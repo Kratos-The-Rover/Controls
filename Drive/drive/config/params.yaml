@@ -15,5 +15,3 @@ min_angular_speed : 0.0001
 #Permissible errors for linear and angular motion 
 linear_tolerance : 0.1 
 angular_tolerance : 0.053   #3/180*pi
-#Direction of motion
-forward_movement_only : True
