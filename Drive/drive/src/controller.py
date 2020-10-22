@@ -10,22 +10,25 @@ from math import pi
 
 # Callback to be called when msg is published to the topic path
 def path_callback(msg):
-    global goal, controller
-    goal = Pose()
+    global goal, start,controller,x_prev,y_prev
     goal.x = msg.x
     goal.y = msg.y
-    goal.theta = 0  # default set to zero ##check later
-    # Initialize controller
-    controller = PIDController()
-    # Call goto
-    goto()
+    goal.theta = None  # default set to None, wont alter goal theta after reaching
+    if x_prev!=goal.x or y_prev!=goal.y:
+        # Initialize controller
+        controller = PIDController()
+        start.x=x_prev
+        start.y=y_prev
+        x_prev=goal.x
+        y_prev=goal.y
+        # Call goto
+        goto()
 
 
 # Callback to be called when msg is published to the topic odom or odometry/filtered
 def odom_callback(msg):
     # Define current_pose variable
     global current_pose
-    current_pose = Pose()
     current_pose.x = msg.pose.pose.position.x
     current_pose.y = msg.pose.pose.position.y
     orientation_q = msg.pose.pose.orientation
@@ -43,23 +46,21 @@ def odom_callback(msg):
 
 # Function to navigate from current position to goal
 def goto():
-    global goal, current_pose, controller
+    global goal,start, current_pose, controller,desired_vel
     # Calculate desired_vel by calling get_velocity and at_goal
-    desired_vel = Pose()
     # Goal is none when we are at final point
-    while goal is not None:
+    chk=True
+    while chk:
         # Check if goal is reached
         if at_goal(current_pose, goal, linear_tolerance, angular_tolerance):
             rospy.loginfo("Goal achieved")
-            goal = None
+            chk=False
             desired_vel.x = 0
             desired_vel.theta = 0
         # Else calculate velocities to reach nearer to goal
         else:
-            desired_vel = controller.get_velocity(current_pose, goal)
+            desired_vel = controller.get_velocity(current_pose, start,goal)
             d = get_goal_distance(current_pose, goal)
-            rospy.loginfo(d)
-            dist_pub.publish(d)
 
         # Publish velocity to cmd_vel as twist messages
         twist.linear.x = desired_vel.x
@@ -68,17 +69,24 @@ def goto():
         r.sleep()
 
 
-# initial values for various variables
 rospy.init_node("controller")
 linear_tolerance = rospy.get_param("linear_tolerance", 0.1)  # 2.5cm
 angular_tolerance = rospy.get_param("angular_tolerance", 10 / 180 * pi)  # 3 degrees
+
+# initial values for various variables
+global x_prev,y_prev,current_pose,desired_vel,start,goal,twist
 twist = Twist()
+current_pose = Pose()
+desired_vel = Pose()
+start=Pose()
+goal = Pose()
+x_prev=0
+y_prev=0
 r = rospy.Rate(10)
 
 # Subscriber/Publisher initializations
 sub = rospy.Subscriber(
-    "/odometry/filtered", Odometry, odom_callback
-)  # odom for kratos/tb for husky odometry/filtered
+    "/odom", Odometry, odom_callback
+)  # odom for kratos/tb3 ,for husky odometry/filtered
 pub = rospy.Publisher("/cmd_vel", Twist, queue_size=5)
-dist_pub = rospy.Publisher("~distance_to_goal", Float32, queue_size=10)
 rospy.spin()
