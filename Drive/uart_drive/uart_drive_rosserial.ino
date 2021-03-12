@@ -7,9 +7,7 @@
 #define wmax 2.84
 
 ros::NodeHandle nh; //Node decleration
-
 geometry_msgs::Twist twist_obj; 
-geometry_msgs::Twist pwms_obj;
 
 float v; //recieved Lin Vel from cmd_vel
 float omega; //recieved Ang vel from cmd_vel
@@ -37,8 +35,6 @@ void sub_cb(const geometry_msgs::Twist &twist_obj)
 }
 
 ros::Subscriber<geometry_msgs::Twist> cmd_vel_sub("/cmd_vel", &sub_cb);
-ros::Publisher chatter("chatter", &twist_obj);
-ros::Publisher pwms_pub("/pwms", &pwms_obj);
 
 float mymap(float c,float a,float b,float d,float e)
 {
@@ -49,7 +45,6 @@ void setup() {
   
     nh.initNode();
     nh.subscribe(cmd_vel_sub);
-    nh.advertise(chatter);
  
       for ( int i=0; i<3 ;i++)
     {
@@ -80,42 +75,71 @@ void loop()
   vel_wheels[4] = v - omega; //middle
   vel_wheels[5] = v - omega; //front
 
-  twist_obj.linear.x = vel_wheels[0];
-  twist_obj.linear.y = vel_wheels[1];
-  twist_obj.linear.z = vel_wheels[2];
-  twist_obj.angular.x = vel_wheels[3];
-  twist_obj.angular.y = vel_wheels[4];
-  twist_obj.angular.z = vel_wheels[5];
-
-  //hardware serial for getting velocity from jetson to arduinomega
+  //Converting and wrting the UART velocities to MDDS
    //for cytron 1 
-   motorLspeed1 = vel_wheels[3];
-   motorRspeed1 = vel_wheels[0];
+   motorLspeed1 = vel_wheels[0];
+   motorRspeed1 = vel_wheels[3];
    
    if(motorLspeed1>=0)
-    MDDS1Serial.write(motorLspeed1);
-   if(motorRspeed1>=0);
-    MDDS1Serial.write(motorRspeed1);
-
+      commandbyte = 0;
+   else if(motorLspeed1 <0)
+      commandbyte =0x40;
+      
+   commandbyte = commandbyte | motorLspeed1;
+   MDDS1Serial.write(commandbyte);
+   
+   if(motorRspeed1>=0)
+      commandbyte = 0xC0;
+   else if(motorRspeed1<0)
+        commandbyte = 0x80;
+        
+   commandbyte = commandbyte | motorRspeed1;
+   MDDS1Serial.write(commandbyte);
+   
+  Serial.println(commandbyte);
+  
    //for cytron 2
    motorLspeed2 = vel_wheels[1];
    motorRspeed2 = vel_wheels[4];
    
-   if(motorLspeed2>=0)
-    MDDS2Serial.write(motorLspeed2);
-   if(motorRspeed2>=0);
-    MDDS2Serial.write(motorRspeed2);
+  if(motorLspeed2>=0)
+      commandbyte = 0;
+   else if(motorLspeed2 <0)
+      commandbyte =0x40;
+      
+   commandbyte = commandbyte | motorLspeed2;
+   MDDS2Serial.write(commandbyte);
 
+   if(motorRspeed2>=0)
+      commandbyte = 0xC0;
+   else if(motorRspeed2<0)
+        commandbyte = 0x80;
+        
+   commandbyte = commandbyte | motorRspeed2;
+   MDDS2Serial.write(commandbyte);
+
+  Serial.println(commandbyte);
    //cytron 3
-   motorLspeed3 = vel_wheels[5];
-   motorRspeed3 = vel_wheels[2];
+   
+   motorLspeed3 = vel_wheels[2];
+   motorRspeed3 = vel_wheels[5];
    
    if(motorLspeed3>=0)
-    MDDS3Serial.write(motorLspeed3);
-   if(motorRspeed3>=0);
-    MDDS3Serial.write(motorRspeed3);
-    
-   chatter.publish(&twist_obj);
+      commandbyte = 0;
+   else if(motorLspeed3 <0)
+      commandbyte =0x40;
+      
+   commandbyte = commandbyte | motorLspeed1;
+   MDDS3Serial.write(commandbyte);
+
+   if(motorRspeed3>=0)
+      commandbyte = 0xC0;
+  else if(motorRspeed3<0)
+        commandbyte = 0x80;
+        
+   commandbyte = commandbyte | motorRspeed3;
+   MDDS3Serial.write(commandbyte);
+  
     nh.spinOnce();
    
    delay(200);
