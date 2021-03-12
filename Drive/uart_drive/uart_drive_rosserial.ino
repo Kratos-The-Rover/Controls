@@ -6,7 +6,7 @@
 #define vmax 0.22
 #define wmax 2.84
 
-ros::NodeHandle nh; //Node decleration
+ros::NodeHandle Uart_vel_command; //Node decleration
 geometry_msgs::Twist twist_obj; 
 
 float v; //recieved Lin Vel from cmd_vel
@@ -43,8 +43,8 @@ float mymap(float c,float a,float b,float d,float e)
  
 void setup() {
   
-    nh.initNode();
-    nh.subscribe(cmd_vel_sub);
+    Uart_vel_command.initNode();
+    Uart_vel_command.subscribe(cmd_vel_sub);
  
       for ( int i=0; i<3 ;i++)
     {
@@ -140,7 +140,7 @@ void loop()
    commandbyte = commandbyte | motorRspeed3;
    MDDS3Serial.write(commandbyte);
   
-    nh.spinOnce();
+    Uart_vel_command.spinOnce();
    
    delay(200);
    
