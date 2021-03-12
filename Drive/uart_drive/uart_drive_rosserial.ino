@@ -65,12 +65,12 @@ void setup() {
  
 void loop()
 { 
-  //right wheels
+  //Left  wheels
   vel_wheels[0] = v + omega; //back 
   vel_wheels[1] = v + omega; //middle 
   vel_wheels[2] = v + omega; //front
 
-  // For left wheels
+  // For Right wheels
   vel_wheels[3] = v - omega; //back
   vel_wheels[4] = v - omega; //middle
   vel_wheels[5] = v - omega; //front
