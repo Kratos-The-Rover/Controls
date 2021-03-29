@@ -52,6 +52,10 @@ const int right_bev_dir_pin = 26;
 const int left_bevel_pwm = 80;
 const int right_bevel_pwm = 80;
 const int k =10; 
+const int l1 = 293.39 * (10**-3);
+const int l2 = 240.49 * (10**-3);
+
+float arr[2] = { }
 
 SoftwareSerial MDDS1Serial=SoftwareSerial(rxPin,serial_pins[0]);
 SoftwareSerial MDDS2Serial=SoftwareSerial(rxPin,serial_pins[1]);
@@ -92,6 +96,8 @@ void sub_cb( const controls_msgs::Rover &Rover_obj){
 }
 ros::Subscriber<Controls_msgs::Rover>Rover_values_sub("/To_Arduino_msg", &sub_cb);
 //Subscriber
+ros::Publisher chatter_pub = n.advertise<std_msgs::Float64MultiArray>("chatter", 1000);
+//publisher
 
 void setup() {
   
@@ -154,6 +160,15 @@ void loop()
   digitalWrite(dirPin, stepper_dir);
   digitalWrite(stepPin, stepper_step);
   delay(200);
+  int f1 = analogRead(A3);
+  int f2 = analogRead(A4); // pwm from potentiometer 
+  float s1= (f1/255)*l1; // feedback stroke length 
+  float s2= (f2/255)*l2;
+  std_msgs::Float64MultiArray array_msg;
+  array_msg.data.resize(2);
+  array_msg.data[1]=s1
+  array_msg.data[2]=s2
+  chatter_pub.publish(array_msg)
 
   
    
