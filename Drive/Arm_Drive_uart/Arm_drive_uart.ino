@@ -94,7 +94,7 @@ void sub_cb( const controls_msgs::Rover &Rover_obj){
   stepper_step = Rover_obj.stepper_step ;
     
 }
-ros::Subscriber<Controls_msgs::Rover>Rover_values_sub("/To_Arduino_msg", &sub_cb);
+ros::Subscriber<Controls_msgs::Rover>Rover_values_sub("/To_Arduino", &sub_cb);
 //Subscriber
 ros::Publisher chatter_pub = n.advertise<std_msgs::Float64MultiArray>("chatter", 1000);
 //publisher
