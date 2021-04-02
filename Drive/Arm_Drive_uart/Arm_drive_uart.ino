@@ -94,16 +94,14 @@ void sub_cb( const controls_msgs::Rover &Rover_obj){
   stepper_step = Rover_obj.stepper_step ;
     
 }
-ros::Subscriber<Controls_msgs::Rover>Rover_values_sub("/To_Arduino", &sub_cb);
-//Subscriber
-ros::Publisher chatter_pub = n.advertise<std_msgs::Float64MultiArray>("chatter", 1000);
-//publisher
+
 
 void setup() {
   
     Uart_vel_command.initNode();
     Uart_vel_command.subscribe(Rover_values_sub);
-    
+    ros::Publisher chatter_pub = n.advertise<std_msgs::Float64MultiArray>("chatter", 1000);
+    //publisher
  
       for ( int i=0; i<3 ;i++)
     {
@@ -136,7 +134,12 @@ void setup() {
    }
  
 void loop()
-{ MDDS1Serial.write(right_wheel_vel);
+{ 
+  ros::Subscriber<Controls_msgs::Rover>Rover_values_sub("/To_Arduino", &sub_cb);
+  //Subscriber
+
+  
+  MDDS1Serial.write(right_wheel_vel);
   MDDS1Serial.write(left_wheel_vel);
 
   MDDS2Serial.write(right_wheel_vel);
